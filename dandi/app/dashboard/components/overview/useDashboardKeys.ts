@@ -87,7 +87,7 @@ export function useDashboardKeys() {
           low.includes("networkerror") ||
           low.includes("load failed"))
       ) {
-        msg = `${msg} — The browser did not get an HTTP response from your Next app. Confirm npm run dev is running in the dandi folder and try http://127.0.0.1:3000/dashboard on Windows (localhost IPv6 quirk).`;
+        msg = `${msg} — The browser did not get an HTTP response from your Next app. Confirm yarn dev is running in the dandi folder and try http://127.0.0.1:3000/dashboard on Windows (localhost IPv6 quirk).`;
       }
       setError(msg);
     } finally {

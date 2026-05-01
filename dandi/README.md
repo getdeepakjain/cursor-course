@@ -2,33 +2,33 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies (from this folder):
 
 ```bash
-npm run dev
-# or
+yarn install
+```
+
+Run the development server:
+
+```bash
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://127.0.0.1:3333](http://127.0.0.1:3333) with your browser (the dev server defaults to **port 3333** because **3000** is often blocked on Windows by Hyper-V / excluded TCP ranges).
 
 ### `EACCES: permission denied … :3000` (Windows)
 
-If you need port 3000 specifically, try `npm run dev:3000` after checking Windows has not reserved that port (run **PowerShell as Administrator**):
+If you need port 3000 specifically, try `yarn dev:3000` after checking Windows has not reserved that port (run **PowerShell as Administrator**):
 
 ```powershell
 netsh interface ipv4 show excludedportrange protocol=tcp
 ```
 
-If `3000` falls inside an excluded range, either change the exclusion or keep using port **3333** (`npm run dev`).
+If `3000` falls inside an excluded range, either change the exclusion or keep using port **3333** (`yarn dev`).
 
-To use another port once: `npx cross-env PORT=8080 next dev --hostname 127.0.0.1`.
+To use another port once: `yarn cross-env PORT=8080 next dev --hostname 127.0.0.1`.
 
-To listen on every interface (e.g. phone on same Wi‑Fi), use `npm run dev:lan`.
+To listen on every interface (e.g. phone on same Wi‑Fi), use `yarn dev:lan`.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

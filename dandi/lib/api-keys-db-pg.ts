@@ -88,7 +88,7 @@ function pgError(err: unknown): never {
       msg,
     );
   const hint = certProblem
-    ? " TLS interception or a custom CA: add PG_SSL_REJECT_UNAUTHORIZED=0 to dandi/.env.local (dev only), or append &sslmode=no-verify to DATABASE_URL, then restart npm run dev. Prefer fixing trust (import your corporate root CA via NODE_EXTRA_CA_CERTS) for production."
+    ? " TLS interception or a custom CA: add PG_SSL_REJECT_UNAUTHORIZED=0 to dandi/.env.local (dev only), or append &sslmode=no-verify to DATABASE_URL, then restart yarn dev. Prefer fixing trust (import your corporate root CA via NODE_EXTRA_CA_CERTS) for production."
     : " Check DATABASE_URL (Supabase → Project Settings → Database → URI). Prefer Session pool (5432) or Direct; transaction pooler (6543) can need ?pgbouncer=true for some tools.";
   throw new Error(`Postgres error: ${msg}.${hint}`);
 }

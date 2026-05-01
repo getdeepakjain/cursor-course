@@ -13,7 +13,7 @@ export function throwFromPostgrestError(
     )
   ) {
     throw new Error(
-      `Cannot reach Supabase (${error.message ?? raw}). Check NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL (https://… .supabase.co), outbound HTTPS, VPN/firewall/DNS. On Windows, restart dev with npm run dev (uses IPv4-first DNS) or set NODE_OPTIONS=--dns-result-order=ipv4first.`,
+      `Cannot reach Supabase (${error.message ?? raw}). Check NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL (https://… .supabase.co), outbound HTTPS, VPN/firewall/DNS. On Windows, restart dev with yarn dev (uses IPv4-first DNS) or set NODE_OPTIONS=--dns-result-order=ipv4first.`,
     );
   }
   throw new Error(error.message ?? raw);

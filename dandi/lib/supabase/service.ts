@@ -41,7 +41,7 @@ export function getServiceSupabase(): SupabaseClient {
       );
     }
     throw new Error(
-      `Missing Supabase env: ${missing.join(" and ")}. Add them to dandi/.env.local (same folder as package.json), save, then restart npm run dev. Do not use the publishable (sb_publishable_) key here — use a secret / service_role key only on the server.`,
+      `Missing Supabase env: ${missing.join(" and ")}. Add them to dandi/.env.local (same folder as package.json), save, then restart yarn dev. Do not use the publishable (sb_publishable_) key here — use a secret / service_role key only on the server.`,
     );
   }
   try {
