@@ -40,12 +40,52 @@ async function tryParsePostBody(request: Request): Promise<GithubSummarizerPostB
   }
 }
 
-function summarizerErrorStatus(message: string): number {
-  if (message.includes("OPENAI_API_KEY")) return 503;
-  if (message.includes("Invalid GitHub repository URL") || message.includes("README.md not found")) {
-    return 400;
+function firstLine(text: string): string {
+  const line = text.split("\n")[0]?.trim();
+  return line || text;
+}
+
+/** Strip LangChain’s appended troubleshooting link from model errors. */
+function sanitizeModelErrorMessage(message: string): string {
+  const cut = message.split("\n\nTroubleshooting URL:")[0];
+  return (cut ?? message).trim();
+}
+
+function formatSummarizerClientError(err: unknown): { status: number; error: string } {
+  const raw = err instanceof Error ? err.message : "Summarization failed";
+  const message = sanitizeModelErrorMessage(raw);
+
+  const httpStatus =
+    typeof err === "object" &&
+    err !== null &&
+    "status" in err &&
+    typeof (err as { status: unknown }).status === "number"
+      ? (err as { status: number }).status
+      : undefined;
+
+  const looksQuotaOrRateLimit =
+    httpStatus === 429 ||
+    /\b429\b/.test(raw) ||
+    /exceeded your current quota/i.test(raw) ||
+    /rate limit/i.test(raw);
+
+  if (looksQuotaOrRateLimit) {
+    return {
+      status: 429,
+      error:
+        "OpenAI rate limit or quota exceeded (often: no billing / no credits on the API key’s organization). " +
+        "Fix: https://platform.openai.com/account/billing — then retry.",
+    };
   }
-  return 502;
+
+  if (message.includes("OPENAI_API_KEY")) {
+    return { status: 503, error: message };
+  }
+  if (message.includes("Invalid GitHub repository URL") || message.includes("README.md not found")) {
+    return { status: 400, error: firstLine(message) };
+  }
+
+  return { status: 502, error: firstLine(message) };
 }
 
 /**
@@ -80,9 +120,8 @@ async function handle(request: Request) {
         const { summary, cool_facts } = await summarizeGithubReadmeContent(readme);
         return NextResponse.json({ ok: true, summary, cool_facts });
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Summarization failed";
-        const status = summarizerErrorStatus(message);
-        return NextResponse.json({ error: message }, { status });
+        const { status, error } = formatSummarizerClientError(err);
+        return NextResponse.json({ error }, { status });
       }
     }
 
