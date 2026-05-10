@@ -1,6 +1,7 @@
 "use client";
 
 import { MenuIcon } from "./sidebar-icons";
+import { AuthButtons } from "@/app/components/AuthButtons";
 
 type Props = {
   onExpand: () => void;
@@ -19,6 +20,9 @@ export function CollapsedHeader({ onExpand }: Props) {
         <MenuIcon />
       </button>
       <span className="text-sm font-semibold tracking-tight text-neutral-800">Dandi AI</span>
+      <div className="ml-auto">
+        <AuthButtons variant="compact" callbackUrl="/dashboard" />
+      </div>
     </div>
   );
 }

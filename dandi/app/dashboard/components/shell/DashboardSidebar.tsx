@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { AuthButtons } from "@/app/components/AuthButtons";
+import { UserAvatar } from "@/app/components/UserAvatar";
 import { navActive, navDisabled, navInactive } from "./nav-styles";
 import {
   ChevronLeftIcon,
@@ -26,6 +29,10 @@ type Props = {
  */
 export function DashboardSidebar({ sidebarOpen, onCollapse }: Props) {
   const pathname = usePathname() ?? "";
+  const { data: session } = useSession();
+  const user = session?.user;
+  const displayName = user?.name?.trim() || user?.email?.trim() || "Account";
+  const subtitle = user?.name?.trim() && user?.email?.trim() ? user.email : "Signed in with Google";
   const overviewActive = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
   const playgroundActive = pathname === "/playground" || pathname.startsWith("/playground/");
 
@@ -88,17 +95,14 @@ export function DashboardSidebar({ sidebarOpen, onCollapse }: Props) {
         </nav>
 
         <div className="mt-auto border-t border-neutral-100 px-4 py-4">
+          <div className="px-2 pb-3">
+            <AuthButtons variant="compact" callbackUrl="/dashboard" />
+          </div>
           <div className="flex items-center gap-3 rounded-lg px-2 py-1">
-            <div
-              className="size-9 shrink-0 rounded-full bg-cover bg-center ring-2 ring-white shadow-sm"
-              style={{
-                backgroundImage: "linear-gradient(135deg, #7C3AED 0%, #2563EB 100%)",
-              }}
-              aria-hidden
-            />
+            <UserAvatar src={user?.image} name={user?.name} email={user?.email} size={36} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-semibold text-neutral-900">Account</p>
-              <p className="truncate text-xs text-neutral-500">Workspace</p>
+              <p className="truncate text-[13px] font-semibold text-neutral-900">{displayName}</p>
+              <p className="truncate text-xs text-neutral-500">{subtitle}</p>
             </div>
             <button
               type="button"

@@ -1,9 +1,11 @@
 import { EnvelopeIcon, GithubIcon, MoonIcon, TwitterIcon } from "./icons";
+import { AuthButtons } from "@/app/components/AuthButtons";
 
 /** Status pill + placeholder social / theme actions (not wired to real auth). */
 export function DashboardTopBar() {
   return (
     <div className="flex items-center justify-end gap-3 border-b border-neutral-200/80 bg-white/80 px-8 py-3 backdrop-blur-sm">
+      <AuthButtons callbackUrl="/dashboard" />
       <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
         <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
         Operational

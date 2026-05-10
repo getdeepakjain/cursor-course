@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ApiKeysEntryButton } from "./components/ApiKeysEntryButton";
+import { AuthButtons } from "./components/AuthButtons";
 
 export default function Home() {
   return (
@@ -36,12 +38,8 @@ export default function Home() {
           </p>
         </div>
         <div className="flex flex-col gap-4 text-base font-medium sm:flex-row sm:flex-wrap">
-          <Link
-            className="flex h-12 w-full items-center justify-center rounded-full bg-zinc-900 px-5 text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white md:w-[158px]"
-            href="/dashboard"
-          >
-            API keys
-          </Link>
+          <ApiKeysEntryButton />
+          <AuthButtons className="w-full md:w-auto" callbackUrl="/dashboard" />
           <a
             className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
             href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
