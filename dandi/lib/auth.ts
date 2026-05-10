@@ -1,5 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import { upsertGoogleAppUserIfConfigured } from "@/lib/app-users-db";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -27,14 +28,48 @@ export function getAuthOptions(): NextAuthOptions {
     pages: {
       signIn: "/login",
     },
+    /**
+     * Runs after a successful OAuth callback (with normalized `user` from Google).
+     * Prefer this over `jwt` for DB writes: `user.id` is always Google's `sub` here.
+     */
+    events: {
+      async signIn({ user, account }) {
+        if (account?.provider !== "google") return;
+        const googleSub =
+          user?.id != null && String(user.id).trim()
+            ? String(user.id).trim()
+            : typeof account?.providerAccountId === "string"
+              ? account.providerAccountId.trim()
+              : "";
+        if (!googleSub) return;
+        await upsertGoogleAppUserIfConfigured({
+          googleSub,
+          email: typeof user?.email === "string" ? user.email.trim() || null : null,
+          fullName: typeof user?.name === "string" ? user.name.trim() || null : null,
+          avatarUrl: typeof user?.image === "string" && user.image.trim() ? user.image.trim() : null,
+        });
+      },
+    },
     callbacks: {
-      async jwt({ token, account, profile }) {
+      async jwt({ token, account, profile, user }) {
         if (account?.provider === "google" && profile) {
-          if ("sub" in profile && profile.sub) token.googleSub = String(profile.sub);
-          // Google returns `picture`; persist on JWT so `session.user.image` stays available.
+          const googleSub =
+            "sub" in profile && typeof profile.sub === "string" && profile.sub.trim()
+              ? profile.sub.trim()
+              : user?.id != null && String(user.id).trim()
+                ? String(user.id).trim()
+                : typeof account?.providerAccountId === "string"
+                  ? account.providerAccountId.trim()
+                  : null;
+          if (googleSub) token.googleSub = googleSub;
+
+          let avatarUrl: string | null = null;
           if ("picture" in profile && typeof profile.picture === "string" && profile.picture.trim()) {
-            token.picture = profile.picture.trim();
+            avatarUrl = profile.picture.trim();
+          } else if (typeof user?.image === "string" && user.image.trim()) {
+            avatarUrl = user.image.trim();
           }
+          if (avatarUrl) token.picture = avatarUrl;
         }
         return token;
       },
