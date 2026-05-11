@@ -96,7 +96,9 @@ export function useDashboardKeys() {
   }, []);
 
   useEffect(() => {
-    void loadKeys();
+    queueMicrotask(() => {
+      void loadKeys();
+    });
   }, [loadKeys]);
 
   const totalUsage = keys.reduce((acc, k) => acc + k.usage, 0);

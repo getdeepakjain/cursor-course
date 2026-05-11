@@ -11,7 +11,7 @@ function connectionStringSuggestsRelaxedSsl(conn: string): boolean {
   );
 }
 
-function useRelaxedTls(conn: string): boolean {
+function shouldUseRelaxedTls(conn: string): boolean {
   if (connectionStringSuggestsRelaxedSsl(conn)) return true;
   const v = (name: string) => {
     const x = readEnv(name);
@@ -33,7 +33,7 @@ export function getDirectPgPool(): Pool {
       "DATABASE_URL (or DB_URL / POSTGRES_URL / SUPABASE_DATABASE_URL) is not set.",
     );
   }
-  const relaxed = useRelaxedTls(conn);
+  const relaxed = shouldUseRelaxedTls(conn);
   const isLocal = /localhost|127\.0\.0\.1/i.test(conn) && !conn.includes("supabase.co");
   pool = new Pool({
     connectionString: conn,

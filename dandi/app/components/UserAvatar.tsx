@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 type Props = {
   src?: string | null;
@@ -27,19 +27,16 @@ function initialsFrom(name: string | null | undefined, email: string | null | un
  * Google (and other) profile photo, with gradient + initials fallback if missing or failed to load.
  */
 export function UserAvatar({ src, name, email, size = 36, className = "" }: Props) {
-  const [failed, setFailed] = useState(false);
+  /** When set, avatar image failed for this exact `src` string; changing `src` clears the failure. */
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const trimmed = src?.trim() ?? "";
-  const showImage = Boolean(trimmed) && !failed;
+  const showImage = Boolean(trimmed) && failedSrc !== trimmed;
   const dim = `${size}px`;
   const initials = initialsFrom(name, email);
 
-  useEffect(() => {
-    setFailed(false);
-  }, [trimmed]);
-
   const onImgError = useCallback(() => {
-    setFailed(true);
-  }, []);
+    setFailedSrc(trimmed);
+  }, [trimmed]);
 
   return (
     <span
@@ -51,6 +48,7 @@ export function UserAvatar({ src, name, email, size = 36, className = "" }: Prop
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element -- external OAuth avatars; avoids remotePatterns for every CDN host
         <img
+          key={trimmed}
           src={trimmed}
           alt=""
           width={size}

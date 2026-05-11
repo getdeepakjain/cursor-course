@@ -1,23 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { GitBranch } from "lucide-react";
+import { GitBranch, LayoutDashboard } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { landingBtnPrimarySm, landingBtnSecondary } from "@/lib/landing-buttons";
 import { AuthButtons } from "./AuthButtons";
 
 export function LandingNav() {
   const { status } = useSession();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/80 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 border-b border-zinc-200/90 bg-[#f3f3f1]/85 backdrop-blur-md supports-[backdrop-filter]:bg-[#f3f3f1]/75 dark:border-border/80 dark:bg-background/85 dark:supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
         <Link
           href="/"
-          className="flex min-w-0 items-center gap-2 font-semibold tracking-tight text-foreground"
+          className="flex min-w-0 items-center gap-2.5 font-semibold tracking-tight text-zinc-900 dark:text-foreground"
         >
-          <GitBranch className="size-6 shrink-0 sm:size-7" aria-hidden />
+          <span
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f5d148] text-zinc-900 shadow-md shadow-amber-950/15 ring-2 ring-amber-300/60 dark:bg-amber-400 dark:ring-amber-200/40"
+            aria-hidden
+          >
+            <GitBranch className="size-[1.125rem] sm:size-5" />
+          </span>
           <span className="truncate text-sm sm:text-base">
             <span className="hidden sm:inline">Dandi GitHub Analyzer</span>
             <span className="sm:hidden">Dandi</span>
@@ -26,31 +31,38 @@ export function LandingNav() {
         <nav className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           <Link
             href="#features"
-            className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground md:inline"
+            className="hidden text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-muted-foreground dark:hover:text-foreground md:inline"
           >
             Features
           </Link>
           <Link
             href="#pricing"
-            className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground md:inline"
+            className="hidden text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-muted-foreground dark:hover:text-foreground md:inline"
           >
             Pricing
           </Link>
+          <Link
+            href="/dashboard"
+            className={cn(
+              "inline-flex items-center gap-1.5",
+              status === "authenticated"
+                ? landingBtnPrimarySm
+                : cn(landingBtnSecondary, "h-9 px-3.5 text-sm dark:border-zinc-600"),
+            )}
+          >
+            <LayoutDashboard className="size-3.5 opacity-85" aria-hidden />
+            Dashboard
+          </Link>
           {status === "authenticated" ? (
-            <>
-              <Link href="/dashboard" className={cn(buttonVariants({ variant: "default", size: "sm" }))}>
-                Dashboard
-              </Link>
-              <AuthButtons variant="compact" callbackUrl="/dashboard" />
-            </>
+            <AuthButtons variant="compact" callbackUrl="/dashboard" />
           ) : status === "loading" ? (
-            <div className="h-8 w-24 animate-pulse rounded-lg bg-muted sm:h-9 sm:w-28" />
+            <div className="h-8 w-24 animate-pulse rounded-lg bg-zinc-200/80 sm:h-9 sm:w-28 dark:bg-muted" />
           ) : (
             <>
-              <Link href="/login" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
+              <Link href="/login" className={cn(landingBtnSecondary, "h-9 px-3.5 text-sm dark:border-zinc-600")}>
                 Log in
               </Link>
-              <Link href="/login" className={cn(buttonVariants({ variant: "default", size: "sm" }))}>
+              <Link href="/login" className={landingBtnPrimarySm}>
                 Sign up
               </Link>
             </>

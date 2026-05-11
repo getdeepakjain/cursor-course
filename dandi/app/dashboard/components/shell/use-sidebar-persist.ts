@@ -13,7 +13,10 @@ export function useSidebarPersist() {
   useEffect(() => {
     try {
       const v = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-      if (v === "0") setSidebarOpen(false);
+      if (v === "0")
+        queueMicrotask(() => {
+          setSidebarOpen(false);
+        });
     } catch {
       /* private mode / blocked storage */
     }
