@@ -9,16 +9,16 @@ type Props = {
 /** Marketing-style plan card + aggregate usage bar (demo cap). */
 export function PlanUsageBanner({ usageDisplay, planLimit, usagePct }: Props) {
   return (
-    <div className="mt-8 px-8">
-      <div className="overflow-hidden rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#2563EB] p-6 text-white shadow-lg shadow-violet-200/50">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="mt-6 px-4 sm:mt-8 sm:px-6 md:px-8">
+      <div className="overflow-hidden rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#2563EB] p-4 text-white shadow-lg shadow-violet-200/50 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-white/80">Current plan</p>
-            <p className="mt-2 text-3xl font-semibold tracking-tight">Developer</p>
+            <p className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Developer</p>
           </div>
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+            className="inline-flex w-full touch-manipulation items-center justify-center gap-2 rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:w-auto sm:justify-start sm:py-2"
           >
             <CardIcon />
             Manage plan

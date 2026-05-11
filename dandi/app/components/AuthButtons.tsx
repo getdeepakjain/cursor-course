@@ -48,12 +48,12 @@ export function AuthButtons({
 
   if (v === "compact") {
     return (
-      <div className={`flex items-center gap-2 ${className ?? ""}`}>
+      <div className={`flex min-w-0 max-w-full items-center gap-1.5 sm:gap-2 ${className ?? ""}`}>
         <UserAvatar src={user.image} name={user.name} email={user.email} size={32} />
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/" })}
-          className="inline-flex h-9 items-center justify-center rounded-full border border-black/[.08] px-4 text-sm font-medium text-zinc-900 transition-colors hover:bg-black/[.04] dark:border-white/[.16] dark:text-zinc-50 dark:hover:bg-white/[.08]"
+          className="inline-flex h-9 max-w-[min(100%,7.5rem)] shrink-0 touch-manipulation items-center justify-center rounded-full border border-black/[.08] px-2.5 text-[11px] font-medium leading-tight text-zinc-900 transition-colors hover:bg-black/[.04] dark:border-white/[.16] dark:text-zinc-50 dark:hover:bg-white/[.08] sm:max-w-none sm:px-4 sm:text-sm"
         >
           Sign out
         </button>

@@ -81,19 +81,19 @@ export default function PlaygroundPage() {
         ) : null}
       </div>
 
-      <div className="px-8 pt-8">
+      <div className="px-4 pt-6 sm:px-6 sm:pt-8 md:px-8">
         <p className="text-xs font-medium text-neutral-500">
           Pages <span className="text-neutral-400">/</span> API Playground
         </p>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight text-neutral-900">API Playground</h1>
-        <p className="mt-2 max-w-2xl text-sm text-neutral-600">
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">API Playground</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-600">
           Paste a full API key to check whether it exists in this app&apos;s database. Invalid or unknown keys show a
           red notice; matches show green.
         </p>
       </div>
 
-      <div className="mt-8 px-8">
-        <div className="max-w-xl rounded-xl border border-neutral-200/80 bg-white p-6 shadow-sm">
+      <div className="mt-6 px-4 sm:mt-8 sm:px-6 md:px-8">
+        <div className="max-w-xl rounded-xl border border-neutral-200/80 bg-white p-4 shadow-sm sm:p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <label className="block text-sm font-medium text-neutral-800">
               API key
@@ -109,7 +109,7 @@ export default function PlaygroundPage() {
             <button
               type="submit"
               disabled={busy}
-              className="rounded-lg bg-[#7C3AED] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#6d28d9] disabled:opacity-50"
+              className="w-full touch-manipulation rounded-lg bg-[#7C3AED] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#6d28d9] disabled:opacity-50 sm:w-auto"
             >
               {busy ? "Checking…" : "Validate key"}
             </button>

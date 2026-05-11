@@ -12,7 +12,7 @@ export function LandingNav() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200/90 bg-[#f3f3f1]/85 backdrop-blur-md supports-[backdrop-filter]:bg-[#f3f3f1]/75 dark:border-border/80 dark:bg-background/85 dark:supports-[backdrop-filter]:bg-background/70">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
+      <div className="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center justify-between gap-x-2 gap-y-2 px-3 py-2 sm:h-16 sm:min-h-0 sm:flex-nowrap sm:gap-3 sm:px-6 sm:py-0">
         <Link
           href="/"
           className="flex min-w-0 items-center gap-2.5 font-semibold tracking-tight text-zinc-900 dark:text-foreground"

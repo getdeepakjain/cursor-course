@@ -32,7 +32,7 @@ export function LoginForm({
 
   if (status === "loading") {
     return (
-      <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 rounded-2xl border border-neutral-200 bg-white px-8 py-12 shadow-sm">
+      <div className="flex min-h-[240px] flex-col items-center justify-center gap-4 rounded-2xl border border-neutral-200 bg-white px-5 py-10 shadow-sm sm:min-h-[280px] sm:px-8 sm:py-12">
         <p className="text-sm text-neutral-500">Checking your session…</p>
       </div>
     );
@@ -40,14 +40,14 @@ export function LoginForm({
 
   if (status === "authenticated") {
     return (
-      <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 rounded-2xl border border-neutral-200 bg-white px-8 py-12 shadow-sm">
+      <div className="flex min-h-[240px] flex-col items-center justify-center gap-4 rounded-2xl border border-neutral-200 bg-white px-5 py-10 shadow-sm sm:min-h-[280px] sm:px-8 sm:py-12">
         <p className="text-sm text-neutral-500">Redirecting…</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white px-8 py-10 shadow-sm">
+    <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white px-5 py-8 shadow-sm sm:px-8 sm:py-10">
       <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Sign in</h1>
       <p className="mt-2 text-sm leading-relaxed text-neutral-600">
         Use your Google account to access the API keys dashboard and authenticated routes.

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { AuthButtons } from "@/app/components/AuthButtons";
 import { UserAvatar } from "@/app/components/UserAvatar";
+import { cn } from "@/lib/utils";
 import { navActive, navDisabled, navInactive } from "./nav-styles";
 import {
   ChevronLeftIcon,
@@ -22,12 +23,15 @@ type Props = {
   /** When false, parent collapses width; inner column stays readable at fixed width. */
   sidebarOpen: boolean;
   onCollapse: () => void;
+  /** `drawer`: fixed overlay for small screens. `rail`: inline sticky column for md+. */
+  layout: "rail" | "drawer";
 };
 
 /**
  * Left rail: brand, primary nav, docs link, profile stub.
  */
-export function DashboardSidebar({ sidebarOpen, onCollapse }: Props) {
+export function DashboardSidebar({ sidebarOpen, onCollapse, layout }: Props) {
+  const drawer = layout === "drawer";
   const pathname = usePathname() ?? "";
   const { data: session } = useSession();
   const user = session?.user;
@@ -38,11 +42,20 @@ export function DashboardSidebar({ sidebarOpen, onCollapse }: Props) {
 
   return (
     <aside
-      className={`sticky top-0 z-30 flex h-screen shrink-0 flex-col overflow-hidden border-neutral-200/90 bg-white shadow-[2px_0_12px_-4px_rgba(0,0,0,0.06)] transition-[width,opacity,border-color] duration-200 ease-out ${
-        sidebarOpen
-          ? "w-[260px] border-r opacity-100"
-          : "w-0 min-w-0 border-0 opacity-0 shadow-none"
-      }`}
+      className={cn(
+        "flex flex-col overflow-hidden border-neutral-200/90 bg-white",
+        drawer
+          ? cn(
+              "fixed left-0 top-0 z-[36] h-dvh w-[min(300px,88vw)] max-w-[320px] border-r shadow-2xl shadow-black/10 transition-transform duration-200 ease-out",
+              sidebarOpen ? "translate-x-0" : "-translate-x-full pointer-events-none",
+            )
+          : cn(
+              "sticky top-0 z-30 h-screen shrink-0 shadow-[2px_0_12px_-4px_rgba(0,0,0,0.06)] transition-[width,opacity,border-color] duration-200 ease-out",
+              sidebarOpen
+                ? "w-[260px] border-r opacity-100"
+                : "w-0 min-w-0 border-0 opacity-0 shadow-none pointer-events-none",
+            ),
+      )}
       aria-hidden={!sidebarOpen}
     >
       <div className="flex min-w-[260px] flex-1 flex-col">
