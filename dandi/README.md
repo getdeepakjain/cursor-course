@@ -14,19 +14,20 @@ Run the development server:
 yarn dev
 ```
 
-Open [http://127.0.0.1:3333](http://127.0.0.1:3333) with your browser (the dev server defaults to **port 3333** because **3000** is often blocked on Windows by Hyper-V / excluded TCP ranges).
+Open [http://127.0.0.1:3000](http://127.0.0.1:3000) with your browser (`yarn dev` uses **port 3000** by default).
 
-### `EACCES: permission denied … :3000` (Windows)
+### `EACCES: permission denied …` on a port (Windows)
 
-If you need port 3000 specifically, try `yarn dev:3000` after checking Windows has not reserved that port (run **PowerShell as Administrator**):
+Hyper-V, WSL, or Docker can **reserve TCP ranges** so binding to `127.0.0.1` fails with **EACCES**. List reserved ports (**PowerShell as Administrator**):
 
 ```powershell
 netsh interface ipv4 show excludedportrange protocol=tcp
 ```
 
-If `3000` falls inside an excluded range, either change the exclusion or keep using port **3333** (`yarn dev`).
+- If **3000** is blocked, try **`yarn dev:3456`** or **`yarn dev:3333`**, then set **`NEXTAUTH_URL`** and Google’s redirect URI to that origin.
+- **3333** is blocked on some machines; **`yarn dev:3456`** is a common fallback.
 
-To use another port once: `yarn cross-env PORT=8080 next dev --hostname 127.0.0.1`.
+To use another port once: `npx cross-env PORT=8080 next dev --hostname 127.0.0.1`.
 
 To listen on every interface (e.g. phone on same Wi‑Fi), use `yarn dev:lan`.
 

@@ -4,9 +4,10 @@
   "private": true,
   "packageManager": "yarn@1.22.22",
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first PORT=3333 next dev --hostname 127.0.0.1",
-    "dev:3000": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first PORT=3000 next dev --hostname 127.0.0.1",
-    "dev:lan": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first PORT=3333 next dev --hostname 0.0.0.0",
+    "dev": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first PORT=3000 next dev --hostname 127.0.0.1",
+    "dev:3333": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first PORT=3333 next dev --hostname 127.0.0.1",
+    "dev:3456": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first PORT=3456 next dev --hostname 127.0.0.1",
+    "dev:lan": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first PORT=3000 next dev --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

@@ -36,6 +36,12 @@ export function LandingNav() {
             Features
           </Link>
           <Link
+            href="#api-demo"
+            className="hidden text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-muted-foreground dark:hover:text-foreground md:inline"
+          >
+            API demo
+          </Link>
+          <Link
             href="#pricing"
             className="hidden text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-muted-foreground dark:hover:text-foreground md:inline"
           >

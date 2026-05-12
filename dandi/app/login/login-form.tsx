@@ -89,7 +89,7 @@ export function LoginForm({
         <p className="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-900">
           Set <code className="rounded bg-amber-100/80 px-1 py-0.5">NEXTAUTH_URL</code> in{" "}
           <code className="rounded bg-amber-100/80 px-1 py-0.5">.env.local</code> to the origin you use in the browser
-          (for example <code className="rounded bg-amber-100/80 px-1 py-0.5">http://127.0.0.1:3333</code>), then add{" "}
+          (for example <code className="rounded bg-amber-100/80 px-1 py-0.5">http://127.0.0.1:3000</code>), then add{" "}
           <code className="break-all rounded bg-amber-100/80 px-1 py-0.5">
             {`{NEXTAUTH_URL}/api/auth/callback/google`}
           </code>{" "}

@@ -28,6 +28,7 @@ import {
   landingBtnSecondaryLg,
 } from "@/lib/landing-buttons";
 import { cn } from "@/lib/utils";
+import { GitHubSummarizerDemo } from "./components/GitHubSummarizerDemo";
 import { LandingNav } from "./components/LandingNav";
 
 const features = [
@@ -83,7 +84,7 @@ const plans = [
     ],
     cta: "Sign up free",
     href: "/login",
-    featured: false,
+    comingSoon: false,
   },
   {
     name: "Pro",
@@ -99,7 +100,7 @@ const plans = [
     ],
     cta: "Start Pro trial",
     href: "/login",
-    featured: true,
+    comingSoon: true,
   },
   {
     name: "Team",
@@ -114,7 +115,7 @@ const plans = [
     ],
     cta: "Talk to sales",
     href: "/login",
-    featured: false,
+    comingSoon: true,
   },
 ] as const;
 
@@ -263,6 +264,8 @@ export default function Home() {
           </div>
         </section>
 
+        <GitHubSummarizerDemo />
+
         <section id="pricing" className="py-16 sm:py-20 dark:bg-background">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center">
@@ -275,14 +278,11 @@ export default function Home() {
               {plans.map((plan) => (
                 <Card
                   key={plan.name}
-                  className={cn(
-                    "relative flex h-full flex-col border-zinc-200/90 bg-white/70 shadow-md dark:border-border/80 dark:bg-card",
-                    plan.featured && "ring-2 ring-amber-400/55 dark:ring-amber-500/40"
-                  )}
+                  className="relative flex h-full flex-col border-zinc-200/90 bg-white/70 shadow-md dark:border-border/80 dark:bg-card"
                 >
-                  {plan.featured ? (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#f5d148] px-3 py-0.5 text-xs font-semibold text-zinc-900 shadow-sm dark:bg-amber-400 dark:text-zinc-950">
-                      Popular
+                  {plan.comingSoon ? (
+                    <div className="absolute right-3 top-3 z-10 rounded-full border border-zinc-200/90 bg-white/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600 shadow-sm backdrop-blur-sm dark:border-border dark:bg-card/95 dark:text-muted-foreground sm:right-4 sm:top-4 sm:text-[11px]">
+                      Coming soon
                     </div>
                   ) : null}
                   <CardHeader>
@@ -308,16 +308,24 @@ export default function Home() {
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Link
-                      href={plan.href}
-                      className={cn(
-                        plan.featured ? landingBtnPrimary : landingBtnSecondary,
-                        "h-10 w-full text-sm font-semibold"
-                      )}
-                    >
-                      {plan.cta}
-                      {plan.featured ? <ArrowRight className="size-4 opacity-90" aria-hidden /> : null}
-                    </Link>
+                    {plan.comingSoon ? (
+                      <span
+                        className={cn(
+                          landingBtnSecondary,
+                          "inline-flex h-10 w-full cursor-not-allowed items-center justify-center text-sm font-semibold opacity-55 pointer-events-none select-none"
+                        )}
+                        aria-disabled="true"
+                      >
+                        {plan.cta}
+                      </span>
+                    ) : (
+                      <Link
+                        href={plan.href}
+                        className={cn(landingBtnSecondary, "h-10 w-full text-sm font-semibold")}
+                      >
+                        {plan.cta}
+                      </Link>
+                    )}
                   </CardFooter>
                 </Card>
               ))}
