@@ -210,9 +210,27 @@ export function GitHubSummarizerDemo() {
               present.
             </li>
             <li>
+              <strong className="text-zinc-900 dark:text-foreground">Summarizer:</strong> README text is summarized with{" "}
+              <a
+                href="https://ollama.ai/"
+                className="font-medium text-amber-800 underline-offset-2 hover:underline dark:text-amber-400"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Ollama
+              </a>{" "}
+              via <strong className="text-zinc-900 dark:text-foreground">Ollama Cloud</strong> by default (
+              <code className="font-mono text-xs">OLLAMA_API_KEY</code>,{" "}
+              <code className="font-mono text-xs">OLLAMA_BASE_URL</code>,{" "}
+              <code className="font-mono text-xs">OLLAMA_MODEL</code>). Override{" "}
+              <code className="font-mono text-xs">OLLAMA_BASE_URL</code> to{" "}
+              <code className="font-mono text-xs">http://127.0.0.1:11434</code> for a local Ollama install (omit the API key).
+            </li>
+            <li>
               <strong className="text-zinc-900 dark:text-foreground">Errors:</strong> <code className="font-mono text-xs">401</code> without a valid
-              key; <code className="font-mono text-xs">400</code> for bad repo URL or missing README; <code className="font-mono text-xs">502/503</code>{" "}
-              when upstream or OpenAI configuration fails.
+              Dandi key; <code className="font-mono text-xs">400</code> for bad repo URL or missing README;{" "}
+              <code className="font-mono text-xs">503</code> when Ollama is unreachable or the model is missing;{" "}
+              <code className="font-mono text-xs">502</code> for other summarizer failures.
             </li>
           </ul>
           <p className="mt-4 text-xs text-zinc-500 dark:text-muted-foreground">

@@ -22,7 +22,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  landingBtnPrimary,
   landingBtnPrimaryLg,
   landingBtnSecondary,
   landingBtnSecondaryLg,

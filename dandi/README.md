@@ -16,6 +16,33 @@ yarn dev
 
 Open [http://127.0.0.1:3000](http://127.0.0.1:3000) with your browser (`yarn dev` uses **port 3000** by default).
 
+### Ollama (GitHub README summarizer)
+
+Summaries use **[Ollama Cloud](https://docs.ollama.com/cloud)** by default (HTTPS + API key; no local GPU required).
+
+1. Create an **[Ollama API key](https://ollama.com/settings/keys)** and set **`OLLAMA_API_KEY`** in the server environment (e.g. `.env.local` for dev, Vercel project env for production).
+2. Defaults: **`OLLAMA_BASE_URL`** = `https://ollama.com` (do not add `/api`; the client appends it), **`OLLAMA_MODEL`** = `gpt-oss:20b-cloud`. Adjust **`OLLAMA_MODEL`** to a cloud model your account supports.
+3. **Local Ollama instead:** set **`OLLAMA_BASE_URL=http://127.0.0.1:11434`**, omit **`OLLAMA_API_KEY`**, run **`ollama serve`**, and **`ollama pull`** the model you set in **`OLLAMA_MODEL`**.
+
+On **Vercel**, set **`OLLAMA_API_KEY`** (and optional overrides) in the project environment; the server calls Ollama’s API over the public internet.
+
+### Ollama TLS / corporate proxy
+
+If the summarizer returns **503** and logs or the JSON **`detail`** (in development) mention **self-signed certificate**, **certificate chain**, or **TLS**, your machine or network is intercepting HTTPS to `ollama.com` (common with corporate proxies or antivirus HTTPS scanning).
+
+**Options:**
+
+1. **Trust the corporate root CA in Node** — export your organization’s root certificate as a PEM file, then before `yarn dev` (PowerShell example):
+
+   ```powershell
+   $env:NODE_EXTRA_CA_CERTS="C:\path\to\corp-root-ca.pem"
+   yarn dev
+   ```
+
+   On macOS/Linux: `export NODE_EXTRA_CA_CERTS=/path/to/corp-root-ca.pem`.
+
+2. **Use local Ollama** — set **`OLLAMA_BASE_URL=http://127.0.0.1:11434`**, remove **`OLLAMA_API_KEY`**, run **`ollama serve`**, and use a locally pulled **`OLLAMA_MODEL`** so traffic stays on localhost and avoids that TLS path to the public internet.
+
 ### `EACCES: permission denied …` on a port (Windows)
 
 Hyper-V, WSL, or Docker can **reserve TCP ranges** so binding to `127.0.0.1` fails with **EACCES**. List reserved ports (**PowerShell as Administrator**):

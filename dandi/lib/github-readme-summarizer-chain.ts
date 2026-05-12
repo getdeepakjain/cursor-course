@@ -1,7 +1,13 @@
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import type { Runnable } from "@langchain/core/runnables";
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatOllama } from "@langchain/ollama";
 import { z } from "zod";
+import {
+  isOllamaCloudApiBaseUrl,
+  readOllamaApiKey,
+  readOllamaBaseUrl,
+  readOllamaModel,
+} from "@/lib/ollama-env";
 
 /** LLM output shape for README-based repo summarization. */
 export const githubReadmeSummarySchema = z.object({
@@ -48,23 +54,32 @@ export async function fetchGitHubReadme(githubUrl: string): Promise<string> {
 }
 
 /**
- * LangChain.js chain: prompt template → {@link ChatOpenAI} with structured output
- * (`summary`, `cool_facts`). Requires `OPENAI_API_KEY`; optional `OPENAI_MODEL` (default `gpt-4o-mini`).
+ * LangChain.js chain: prompt template → {@link ChatOllama} with structured output
+ * (`summary`, `cool_facts`). Defaults to [Ollama Cloud](https://docs.ollama.com/cloud):
+ * `OLLAMA_BASE_URL` (`https://ollama.com` — no `/api`; the client adds `/api/…`), `OLLAMA_MODEL` (`gpt-oss:20b-cloud`),
+ * `OLLAMA_API_KEY` (Bearer). For a local daemon, set `OLLAMA_BASE_URL=http://127.0.0.1:11434` and
+ * omit `OLLAMA_API_KEY`.
  */
 export function createGithubReadmeSummarizerChain(): Runnable<
   GithubReadmeSummarizerChainInput,
   GithubReadmeSummary
 > {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey?.trim()) {
-    throw new Error("OPENAI_API_KEY is not set");
+  const baseUrl = readOllamaBaseUrl();
+  const model = readOllamaModel();
+  const apiKey = readOllamaApiKey();
+
+  if (isOllamaCloudApiBaseUrl(baseUrl) && !apiKey) {
+    throw new Error(
+      "OLLAMA_API_KEY is required for Ollama Cloud (default OLLAMA_BASE_URL). Create a key at https://ollama.com/settings/keys " +
+        "or set OLLAMA_BASE_URL to a local Ollama server (e.g. http://127.0.0.1:11434) without a key."
+    );
   }
 
-  const modelName = process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini";
-  const llm = new ChatOpenAI({
-    model: modelName,
-    apiKey,
+  const llm = new ChatOllama({
+    baseUrl,
+    model,
     temperature: 0.2,
+    ...(apiKey ? { headers: { Authorization: `Bearer ${apiKey}` } } : {}),
   });
 
   const structuredLlm = llm.withStructuredOutput(githubReadmeSummarySchema, {
