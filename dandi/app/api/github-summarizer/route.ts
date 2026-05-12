@@ -167,6 +167,20 @@ function formatSummarizerClientError(err: unknown): SummarizerClientErrorBody {
     };
   }
 
+  if (
+    /failed to parse/i.test(chain) ||
+    message.includes("Summarizer returned non-JSON") ||
+    message.includes("Summarizer JSON failed validation")
+  ) {
+    return {
+      status: 502,
+      error:
+        "The model did not return valid JSON with keys summary (string) and cool_facts (string array). " +
+        "Try another OLLAMA_MODEL on Ollama Cloud, or retry once.",
+      ...(process.env.NODE_ENV === "development" ? { detail: firstLine(message).slice(0, 800) } : {}),
+    };
+  }
+
   if (message.includes("OLLAMA") || message.includes("Ollama")) {
     return { status: 503, error: firstLine(message) };
   }

@@ -1,5 +1,7 @@
+import type { BaseMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import type { Runnable } from "@langchain/core/runnables";
+import { RunnableLambda } from "@langchain/core/runnables";
 import { ChatOllama } from "@langchain/ollama";
 import { z } from "zod";
 import {
@@ -21,7 +23,11 @@ export const githubReadmeSummarySchema = z.object({
 
 export type GithubReadmeSummary = z.infer<typeof githubReadmeSummarySchema>;
 
-const README_SUMMARY_PROMPT = `Summarize this GitHub repository from this README file content.
+const README_SUMMARY_PROMPT = `You output ONLY valid JSON (no markdown, no prose, no code fences, no keys besides the two below).
+
+Return a single JSON object with exactly these keys:
+- "summary": string — one concise paragraph summarizing the repository from the README only.
+- "cool_facts": array of strings — 3 to 8 short bullet-style facts (stack, purpose, notable details).
 
 README:
 {readme_content}`;
@@ -29,6 +35,47 @@ README:
 export type GithubReadmeSummarizerChainInput = {
   readme_content: string;
 };
+
+function stripMarkdownJsonFence(text: string): string {
+  const t = text.trim();
+  const fenced = /^```(?:json)?\s*\r?\n?([\s\S]*?)\r?\n?```$/i.exec(t);
+  if (fenced?.[1]) return fenced[1].trim();
+  return t;
+}
+
+function messageTextContent(msg: BaseMessage): string {
+  const { content } = msg;
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (typeof part === "string") return part;
+        if (part && typeof part === "object" && "type" in part && part.type === "text" && "text" in part) {
+          return String((part as { text: string }).text);
+        }
+        return "";
+      })
+      .join("");
+  }
+  return String(content ?? "");
+}
+
+function parseGithubReadmeSummaryFromMessage(msg: BaseMessage): GithubReadmeSummary {
+  const raw = stripMarkdownJsonFence(messageTextContent(msg));
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(
+      `Summarizer returned non-JSON (Ollama format=json). First 280 chars: ${raw.slice(0, 280)}`
+    );
+  }
+  const result = githubReadmeSummarySchema.safeParse(parsed);
+  if (!result.success) {
+    throw new Error(`Summarizer JSON failed validation: ${result.error.flatten().formErrors.join("; ")}`);
+  }
+  return result.data;
+}
 
 /**
  * Fetches `README.md` from a GitHub repo URL (`https://github.com/owner/repo`).
@@ -54,11 +101,12 @@ export async function fetchGitHubReadme(githubUrl: string): Promise<string> {
 }
 
 /**
- * LangChain.js chain: prompt template → {@link ChatOllama} with structured output
- * (`summary`, `cool_facts`). Defaults to [Ollama Cloud](https://docs.ollama.com/cloud):
- * `OLLAMA_BASE_URL` (`https://ollama.com` — no `/api`; the client adds `/api/…`), `OLLAMA_MODEL` (`gpt-oss:20b-cloud`),
- * `OLLAMA_API_KEY` (Bearer). For a local daemon, set `OLLAMA_BASE_URL=http://127.0.0.1:11434` and
- * omit `OLLAMA_API_KEY`.
+ * LangChain.js chain: strict JSON prompt → {@link ChatOllama} with `format: "json"` → Zod parse.
+ * Ollama Cloud often ignores JSON-schema constrained decoding used by `withStructuredOutput`;
+ * native JSON mode plus explicit instructions is more reliable on Vercel.
+ *
+ * Env: `OLLAMA_BASE_URL` (default `https://ollama.com`), `OLLAMA_MODEL`, `OLLAMA_API_KEY` for cloud;
+ * local: `http://127.0.0.1:11434` without API key.
  */
 export function createGithubReadmeSummarizerChain(): Runnable<
   GithubReadmeSummarizerChainInput,
@@ -78,16 +126,15 @@ export function createGithubReadmeSummarizerChain(): Runnable<
   const llm = new ChatOllama({
     baseUrl,
     model,
-    temperature: 0.2,
+    temperature: 0.1,
+    format: "json",
     ...(apiKey ? { headers: { Authorization: `Bearer ${apiKey}` } } : {}),
   });
 
-  const structuredLlm = llm.withStructuredOutput(githubReadmeSummarySchema, {
-    name: "github_readme_summary",
-  });
-
   const prompt = ChatPromptTemplate.fromTemplate(README_SUMMARY_PROMPT);
-  return prompt.pipe(structuredLlm);
+  const parseStep = RunnableLambda.from((msg: BaseMessage) => parseGithubReadmeSummaryFromMessage(msg));
+
+  return prompt.pipe(llm).pipe(parseStep);
 }
 
 /** Runs the summarizer chain on raw README text. */
