@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { jsonDbError } from "@/lib/api-db-error";
 import { createKey, listKeys } from "@/lib/api-keys-db";
+import { requireKeysApiUser } from "@/lib/auth-keys-api";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = await requireKeysApiUser(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
   try {
-    const keys = await listKeys();
+    const keys = await listKeys(auth.userUuid);
     return NextResponse.json({ keys });
   } catch (err) {
     return jsonDbError(err);
@@ -12,6 +17,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireKeysApiUser(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
   let body: unknown;
   try {
     body = await request.json();
@@ -27,7 +36,7 @@ export async function POST(request: Request) {
       : "";
 
   try {
-    const record = await createKey(name);
+    const record = await createKey(auth.userUuid, name);
     return NextResponse.json(
       {
         id: record.id,

@@ -1,16 +1,49 @@
 "use client";
 
+import { getSession, useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { CreateResponse, KeyRow, ToastVariant } from "./types";
 
 const TOAST_MS = 4500;
 const PLAN_LIMIT = 1000;
 
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}=([^;]*)`));
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
+
+/**
+ * NextAuth stores the session as an encrypted JWT (httpOnly cookie on same-origin requests).
+ * `credentials: "include"` sends that cookie automatically. If the cookie is readable (rare),
+ * you can also send `Authorization: Bearer <token>` for tools that do not attach cookies.
+ */
+async function keysRequestInit(base?: RequestInit): Promise<RequestInit> {
+  await getSession();
+  const headers = new Headers(base?.headers);
+  if (!headers.has("Content-Type") && base?.body != null) {
+    headers.set("Content-Type", "application/json");
+  }
+  const secure =
+    typeof window !== "undefined" && window.location.protocol === "https:";
+  const cookieName = secure ? "__Secure-next-auth.session-token" : "next-auth.session-token";
+  const bearer = readCookie(cookieName);
+  if (bearer && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${bearer}`);
+  }
+  return {
+    ...base,
+    credentials: "include",
+    headers,
+  };
+}
+
 /**
  * All client state and API calls for the Overview / API keys screen.
  * Keeps `page.tsx` as a thin composition layer.
  */
 export function useDashboardKeys() {
+  const { status } = useSession();
   const [keys, setKeys] = useState<KeyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +94,12 @@ export function useDashboardKeys() {
     setError(null);
     let receivedHttpResponse = false;
     try {
-      const res = await fetch("/api/keys");
+      const session = await getSession();
+      if (!session?.user) {
+        setKeys([]);
+        throw new Error("Sign in to manage API keys.");
+      }
+      const res = await fetch("/api/keys", await keysRequestInit());
       receivedHttpResponse = true;
       const payload: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -96,10 +134,18 @@ export function useDashboardKeys() {
   }, []);
 
   useEffect(() => {
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
+      setLoading(false);
+      setKeys([]);
+      setError("Sign in to manage API keys.");
+      return;
+    }
+    setLoading(true);
     queueMicrotask(() => {
       void loadKeys();
     });
-  }, [loadKeys]);
+  }, [loadKeys, status]);
 
   const totalUsage = keys.reduce((acc, k) => acc + k.usage, 0);
   const usageDisplay = Math.min(totalUsage, PLAN_LIMIT);
@@ -110,11 +156,10 @@ export function useDashboardKeys() {
     setCreating(true);
     setError(null);
     try {
-      const res = await fetch("/api/keys", {
+      const res = await fetch("/api/keys", await keysRequestInit({
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newName }),
-      });
+      }));
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(typeof err.error === "string" ? err.error : "Create failed");
@@ -137,11 +182,10 @@ export function useDashboardKeys() {
     setSavingId(renameModalId);
     setError(null);
     try {
-      const res = await fetch(`/api/keys/${renameModalId}`, {
+      const res = await fetch(`/api/keys/${renameModalId}`, await keysRequestInit({
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: renameValue }),
-      });
+      }));
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(typeof err.error === "string" ? err.error : "Update failed");
@@ -162,7 +206,7 @@ export function useDashboardKeys() {
     setDeleteBusy(true);
     setError(null);
     try {
-      const res = await fetch(`/api/keys/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/keys/${id}`, await keysRequestInit({ method: "DELETE" }));
       if (!res.ok) throw new Error("Delete failed");
       setDeleteConfirmId(null);
       setRevealed((prev) => {
@@ -191,7 +235,7 @@ export function useDashboardKeys() {
     setRevealLoading(id);
     setError(null);
     try {
-      const res = await fetch(`/api/keys/${id}/secret`);
+      const res = await fetch(`/api/keys/${id}/secret`, await keysRequestInit());
       if (!res.ok) throw new Error("Reveal failed");
       const data = (await res.json()) as { secret: string };
       setRevealed((prev) => ({ ...prev, [id]: data.secret }));

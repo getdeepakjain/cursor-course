@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import { jsonDbError } from "@/lib/api-db-error";
 import { deleteKey, getKey, updateKey } from "@/lib/api-keys-db";
+import { requireKeysApiUser } from "@/lib/auth-keys-api";
 import { tableKeyMask } from "@/lib/api-keys-store";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
+  const auth = await requireKeysApiUser(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
   try {
     const { id } = await context.params;
-    const record = await getKey(id);
+    const record = await getKey(auth.userUuid, id);
     if (!record) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
@@ -25,6 +30,10 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PUT(request: Request, context: RouteContext) {
+  const auth = await requireKeysApiUser(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
   const { id } = await context.params;
   let body: unknown;
   try {
@@ -45,7 +54,7 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 
   try {
-    const updated = await updateKey(id, name);
+    const updated = await updateKey(auth.userUuid, id, name);
     if (!updated) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
@@ -62,10 +71,14 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
+  const auth = await requireKeysApiUser(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
   try {
     const { id } = await context.params;
-    const ok = await deleteKey(id);
+    const ok = await deleteKey(auth.userUuid, id);
     if (!ok) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }

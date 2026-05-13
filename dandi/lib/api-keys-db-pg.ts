@@ -48,12 +48,14 @@ function pgError(err: unknown): never {
   throw new Error(`Postgres error: ${msg}.${hint}`);
 }
 
-export async function listKeys(): Promise<ApiKeyPublic[]> {
+export async function listKeys(userId: string): Promise<ApiKeyPublic[]> {
   try {
     const r = await getDirectPgPool().query<ApiKeyRow>(
       `select id, name, secret, usage_count, created_at
        from public.api_keys
+       where user_id = $1::uuid
        order by created_at desc`,
+      [userId],
     );
     return r.rows.map(toPublic);
   } catch (e) {
@@ -61,13 +63,13 @@ export async function listKeys(): Promise<ApiKeyPublic[]> {
   }
 }
 
-export async function getKey(id: string): Promise<ApiKeyRecord | null> {
+export async function getKey(userId: string, id: string): Promise<ApiKeyRecord | null> {
   try {
     const r = await getDirectPgPool().query<ApiKeyRow>(
       `select id, name, secret, usage_count, created_at
        from public.api_keys
-       where id = $1::uuid`,
-      [id],
+       where id = $1::uuid and user_id = $2::uuid`,
+      [id, userId],
     );
     if (r.rows.length === 0) return null;
     return toRecord(r.rows[0]!);
@@ -76,15 +78,15 @@ export async function getKey(id: string): Promise<ApiKeyRecord | null> {
   }
 }
 
-export async function createKey(name: string): Promise<ApiKeyRecord> {
+export async function createKey(userId: string, name: string): Promise<ApiKeyRecord> {
   const trimmed = name.trim() || "Untitled";
   const secret = `dandi_${randomBytes(24).toString("base64url")}`;
   try {
     const r = await getDirectPgPool().query<ApiKeyRow>(
-      `insert into public.api_keys (name, secret, usage_count)
-       values ($1, $2, 0)
+      `insert into public.api_keys (user_id, name, secret, usage_count)
+       values ($1::uuid, $2, $3, 0)
        returning id, name, secret, usage_count, created_at`,
-      [trimmed, secret],
+      [userId, trimmed, secret],
     );
     return toRecord(r.rows[0]!);
   } catch (e) {
@@ -93,23 +95,24 @@ export async function createKey(name: string): Promise<ApiKeyRecord> {
 }
 
 export async function updateKey(
+  userId: string,
   id: string,
   name: string,
 ): Promise<ApiKeyRecord | null> {
   const trimmed = name.trim();
   try {
     const cur = await getDirectPgPool().query<{ name: string }>(
-      `select name from public.api_keys where id = $1::uuid`,
-      [id],
+      `select name from public.api_keys where id = $1::uuid and user_id = $2::uuid`,
+      [id, userId],
     );
     if (cur.rows.length === 0) return null;
     const nextName = trimmed || cur.rows[0]!.name;
     const r = await getDirectPgPool().query<ApiKeyRow>(
       `update public.api_keys
        set name = $1
-       where id = $2::uuid
+       where id = $2::uuid and user_id = $3::uuid
        returning id, name, secret, usage_count, created_at`,
-      [nextName, id],
+      [nextName, id, userId],
     );
     return toRecord(r.rows[0]!);
   } catch (e) {
@@ -117,11 +120,11 @@ export async function updateKey(
   }
 }
 
-export async function deleteKey(id: string): Promise<boolean> {
+export async function deleteKey(userId: string, id: string): Promise<boolean> {
   try {
     const r = await getDirectPgPool().query(
-      `delete from public.api_keys where id = $1::uuid returning id`,
-      [id],
+      `delete from public.api_keys where id = $1::uuid and user_id = $2::uuid returning id`,
+      [id, userId],
     );
     return (r.rowCount ?? 0) > 0;
   } catch (e) {

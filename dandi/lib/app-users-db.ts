@@ -55,7 +55,7 @@ async function upsertGoogleAppUserPostgres(input: {
        last_login_at = excluded.last_login_at`,
     [
       input.googleSub,
-      input.email?.trim() || null,
+      input.email?.trim().toLowerCase() || null,
       input.fullName?.trim() || null,
       input.avatarUrl?.trim() || null,
       lastLoginAt,
@@ -74,7 +74,7 @@ async function upsertGoogleAppUserSupabaseHttp(input: {
   const { error } = await supabase.from("app_users").upsert(
     {
       google_sub: input.googleSub,
-      email: input.email?.trim() || null,
+      email: input.email?.trim().toLowerCase() || null,
       full_name: input.fullName?.trim() || null,
       avatar_url: input.avatarUrl?.trim() || null,
       last_login_at: lastLoginAt,
@@ -115,4 +115,40 @@ export async function upsertGoogleAppUserIfConfigured(input: {
   } catch (e) {
     console.error("[dandi] upsertGoogleAppUserIfConfigured failed:", e);
   }
+}
+
+async function findAppUserUuidByEmailPostgres(email: string): Promise<string | null> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+  const r = await getDirectPgPool().query<{ id: string }>(
+    `select id from public.app_users
+     where lower(trim(coalesce(email, ''))) = $1
+     limit 1`,
+    [normalized],
+  );
+  return r.rows[0]?.id ?? null;
+}
+
+async function findAppUserUuidByEmailSupabaseHttp(email: string): Promise<string | null> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+  const supabase = getServiceSupabase();
+  const { data, error } = await supabase
+    .from("app_users")
+    .select("id")
+    .eq("email", normalized)
+    .maybeSingle();
+  if (error) throwFromPostgrestError(error);
+  const row = data as { id: string } | null;
+  return row?.id ?? null;
+}
+
+/**
+ * Looks up `public.app_users.id` (UUID) by email — same registry NextAuth syncs on Google sign-in.
+ */
+export async function findAppUserUuidByEmail(email: string): Promise<string | null> {
+  const path = appUserSyncPath();
+  if (path === "none") return null;
+  if (path === "postgres") return findAppUserUuidByEmailPostgres(email);
+  return findAppUserUuidByEmailSupabaseHttp(email);
 }

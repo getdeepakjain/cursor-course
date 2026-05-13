@@ -32,23 +32,25 @@ function toPublic(row: ApiKeyRow): ApiKeyPublic {
   };
 }
 
-export async function listKeys(): Promise<ApiKeyPublic[]> {
+export async function listKeys(userId: string): Promise<ApiKeyPublic[]> {
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("api_keys")
     .select("id, name, secret, usage_count, created_at")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) throwFromPostgrestError(error);
   return ((data ?? []) as ApiKeyRow[]).map(toPublic);
 }
 
-export async function getKey(id: string): Promise<ApiKeyRecord | null> {
+export async function getKey(userId: string, id: string): Promise<ApiKeyRecord | null> {
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("api_keys")
     .select("id, name, secret, usage_count, created_at")
     .eq("id", id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (error) throwFromPostgrestError(error);
@@ -56,13 +58,14 @@ export async function getKey(id: string): Promise<ApiKeyRecord | null> {
   return toRecord(data as ApiKeyRow);
 }
 
-export async function createKey(name: string): Promise<ApiKeyRecord> {
+export async function createKey(userId: string, name: string): Promise<ApiKeyRecord> {
   const trimmed = name.trim() || "Untitled";
   const secret = `dandi_${randomBytes(24).toString("base64url")}`;
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("api_keys")
     .insert({
+      user_id: userId,
       name: trimmed,
       secret,
       usage_count: 0,
@@ -75,6 +78,7 @@ export async function createKey(name: string): Promise<ApiKeyRecord> {
 }
 
 export async function updateKey(
+  userId: string,
   id: string,
   name: string,
 ): Promise<ApiKeyRecord | null> {
@@ -84,6 +88,7 @@ export async function updateKey(
     .from("api_keys")
     .select("id, name, secret, usage_count, created_at")
     .eq("id", id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (fetchErr) throwFromPostgrestError(fetchErr);
@@ -94,6 +99,7 @@ export async function updateKey(
     .from("api_keys")
     .update({ name: nextName })
     .eq("id", id)
+    .eq("user_id", userId)
     .select("id, name, secret, usage_count, created_at")
     .single();
 
@@ -101,12 +107,13 @@ export async function updateKey(
   return toRecord(data as ApiKeyRow);
 }
 
-export async function deleteKey(id: string): Promise<boolean> {
+export async function deleteKey(userId: string, id: string): Promise<boolean> {
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("api_keys")
     .delete()
     .eq("id", id)
+    .eq("user_id", userId)
     .select("id");
 
   if (error) throwFromPostgrestError(error);
