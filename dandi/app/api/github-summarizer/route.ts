@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonDbError } from "@/lib/api-db-error";
 import { secretExists } from "@/lib/api-keys-db";
+import { claimGithubSummarizerQuota } from "@/lib/github-summarizer-quota";
 import {
   fetchGitHubReadme,
   summarizeGithubReadmeContent,
@@ -204,6 +205,7 @@ function summarizerErrorJson(body: SummarizerClientErrorBody): Record<string, st
  * runs the summarizer via **Ollama Cloud** by default (`OLLAMA_API_KEY` + `OLLAMA_BASE_URL` default `https://ollama.com`), returns `{ ok, summary, cool_facts }`.
  *
  * Without `githubUrl`: `200` `{ "ok": true }`. Invalid key: `401` `{ "error": "Unauthorized" }`.
+ * With `githubUrl`: usage is capped per OAuth user (see `GITHUB_SUMMARIZER_USAGE_LIMIT`, default 1000); over limit: `429` `{ "error": "…" }`.
  */
 async function handle(request: Request) {
   const post = await tryParsePostBody(request);
@@ -215,13 +217,21 @@ async function handle(request: Request) {
   }
 
   try {
-    const valid = await secretExists(secret);
-    if (!valid) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const githubUrl = post?.githubUrl?.trim();
     if (request.method === "POST" && githubUrl) {
+      const quota = await claimGithubSummarizerQuota(secret);
+      if (quota.status === "invalid_secret") {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      if (quota.status === "rate_limited") {
+        return NextResponse.json(
+          {
+            error:
+              "Rate limit exceeded for the GitHub summarizer. Try again later or ask an administrator to raise GITHUB_SUMMARIZER_USAGE_LIMIT.",
+          },
+          { status: 429 },
+        );
+      }
       try {
         const readme = await fetchGitHubReadme(githubUrl);
         const { summary, cool_facts } = await summarizeGithubReadmeContent(readme);
@@ -230,6 +240,11 @@ async function handle(request: Request) {
         const body = formatSummarizerClientError(err);
         return NextResponse.json(summarizerErrorJson(body), { status: body.status });
       }
+    }
+
+    const valid = await secretExists(secret);
+    if (!valid) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     return NextResponse.json({ ok: true });
