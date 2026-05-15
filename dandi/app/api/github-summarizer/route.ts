@@ -3,7 +3,9 @@ import { jsonDbError } from "@/lib/api-db-error";
 import { secretExists } from "@/lib/api-keys-db";
 import { claimGithubSummarizerQuota } from "@/lib/github-summarizer-quota";
 import {
+  fetchGithubRepoPublicInfo,
   fetchGitHubReadme,
+  parseGithubRepoFromUrl,
   summarizeGithubReadmeContent,
 } from "@/lib/github-readme-summarizer-chain";
 
@@ -202,7 +204,7 @@ function summarizerErrorJson(body: SummarizerClientErrorBody): Record<string, st
  * Auth: `Authorization: Bearer <key>`, `X-Api-Key: <key>`, or POST JSON `secret`.
  *
  * **POST JSON** (optional): `githubUrl` — `https://github.com/owner/repo` — fetches README,
- * runs the summarizer via **Ollama Cloud** by default (`OLLAMA_API_KEY` + `OLLAMA_BASE_URL` default `https://ollama.com`), returns `{ ok, summary, cool_facts }`.
+ * runs the summarizer via **Ollama Cloud** by default (`OLLAMA_API_KEY` + `OLLAMA_BASE_URL` default `https://ollama.com`), returns `{ ok, summary, cool_facts, stars, latest_version, website_url, license }`.
  *
  * Without `githubUrl`: `200` `{ "ok": true }`. Invalid key: `401` `{ "error": "Unauthorized" }`.
  * With `githubUrl`: usage is capped per OAuth user (see `GITHUB_SUMMARIZER_USAGE_LIMIT`, default 1000); over limit: `429` `{ "error": "…" }`.
@@ -233,9 +235,34 @@ async function handle(request: Request) {
         );
       }
       try {
+        const parsed = parseGithubRepoFromUrl(githubUrl);
+        const metaPromise =
+          parsed !== null
+            ? fetchGithubRepoPublicInfo(parsed.owner, parsed.repo).catch(() => ({
+                stars: null as number | null,
+                latest_version: null as string | null,
+                website_url: null as string | null,
+                license: null as string | null,
+              }))
+            : Promise.resolve({
+                stars: null as number | null,
+                latest_version: null as string | null,
+                website_url: null as string | null,
+                license: null as string | null,
+              });
+
         const readme = await fetchGitHubReadme(githubUrl);
+        const meta = await metaPromise;
         const { summary, cool_facts } = await summarizeGithubReadmeContent(readme);
-        return NextResponse.json({ ok: true, summary, cool_facts });
+        return NextResponse.json({
+          ok: true,
+          summary,
+          cool_facts,
+          stars: meta.stars,
+          latest_version: meta.latest_version,
+          website_url: meta.website_url,
+          license: meta.license,
+        });
       } catch (err) {
         const body = formatSummarizerClientError(err);
         return NextResponse.json(summarizerErrorJson(body), { status: body.status });

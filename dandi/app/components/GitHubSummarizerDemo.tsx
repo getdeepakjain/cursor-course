@@ -206,8 +206,16 @@ export function GitHubSummarizerDemo() {
             </li>
             <li>
               <strong className="text-zinc-900 dark:text-foreground">Success (200):</strong>{" "}
-              <code className="font-mono text-xs">{"{ ok, summary, cool_facts }"}</code> when <code className="font-mono text-xs">githubUrl</code> is
-              present.
+              <code className="font-mono text-xs">
+                {"{ ok, summary, cool_facts, stars, latest_version, website_url, license }"}
+              </code>{" "}
+              when <code className="font-mono text-xs">githubUrl</code> is present. <code className="font-mono text-xs">stars</code> is the GitHub
+              stargazer count; <code className="font-mono text-xs">latest_version</code> is the latest Release{" "}
+              <code className="font-mono text-xs">tag_name</code> when published, otherwise the newest repo tag, or{" "}
+              <code className="font-mono text-xs">null</code>. <code className="font-mono text-xs">website_url</code> is the repo’s configured site
+              URL (or <code className="font-mono text-xs">null</code>). <code className="font-mono text-xs">license</code> is the SPDX id when GitHub
+              provides one (else the license name, or <code className="font-mono text-xs">null</code>). Optional env{" "}
+              <code className="font-mono text-xs">GITHUB_TOKEN</code> helps avoid REST rate limits.
             </li>
             <li>
               <strong className="text-zinc-900 dark:text-foreground">Summarizer:</strong> README text is summarized with{" "}
