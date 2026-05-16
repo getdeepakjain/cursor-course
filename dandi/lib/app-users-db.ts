@@ -152,3 +152,43 @@ export async function findAppUserUuidByEmail(email: string): Promise<string | nu
   if (path === "postgres") return findAppUserUuidByEmailPostgres(email);
   return findAppUserUuidByEmailSupabaseHttp(email);
 }
+
+export type AppUserDashboardProfile = {
+  planName: string;
+};
+
+async function getAppUserDashboardProfilePostgres(userId: string): Promise<AppUserDashboardProfile | null> {
+  const r = await getDirectPgPool().query<{
+    plan_name: string | null;
+  }>(
+    `select plan_name
+     from public.app_users
+     where id = $1::uuid
+     limit 1`,
+    [userId],
+  );
+  const row = r.rows[0];
+  if (!row) return null;
+  return {
+    planName: (row.plan_name ?? "Free").trim() || "Free",
+  };
+}
+
+async function getAppUserDashboardProfileSupabaseHttp(userId: string): Promise<AppUserDashboardProfile | null> {
+  const supabase = getServiceSupabase();
+  const { data, error } = await supabase.from("app_users").select("plan_name").eq("id", userId).maybeSingle();
+  if (error) throwFromPostgrestError(error);
+  const row = data as { plan_name?: string | null } | null;
+  if (!row) return null;
+  return {
+    planName: (typeof row.plan_name === "string" ? row.plan_name.trim() : "") || "Free",
+  };
+}
+
+/** Plan label for the Overview banner (same row NextAuth syncs). */
+export async function getAppUserDashboardProfile(userId: string): Promise<AppUserDashboardProfile | null> {
+  const path = appUserSyncPath();
+  if (path === "none") return null;
+  if (path === "postgres") return getAppUserDashboardProfilePostgres(userId);
+  return getAppUserDashboardProfileSupabaseHttp(userId);
+}

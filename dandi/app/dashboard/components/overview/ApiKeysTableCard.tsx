@@ -35,7 +35,8 @@ export function ApiKeysTableCard({
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold text-neutral-900">API keys</h2>
             <p className="mt-1 max-w-2xl text-sm leading-relaxed text-neutral-500">
-              The key is used to authenticate your requests to the API. To learn more, see the{" "}
+              The key authenticates API requests. Usage counts GitHub README summarizer calls per key. To learn more,
+              see the{" "}
               <a
                 href="https://nextjs.org/docs"
                 target="_blank"
@@ -81,7 +82,7 @@ export function ApiKeysTableCard({
             <thead>
               <tr className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
                 <th className="whitespace-nowrap px-3 py-3 sm:px-4">Name</th>
-                <th className="whitespace-nowrap px-3 py-3 sm:px-4">Usage</th>
+                <th className="whitespace-nowrap px-3 py-3 sm:px-4">Summarizer usage</th>
                 <th className="min-w-[8rem] px-3 py-3 sm:min-w-0 sm:px-4">Key</th>
                 <th className="whitespace-nowrap px-3 py-3 text-right sm:px-4">Options</th>
               </tr>

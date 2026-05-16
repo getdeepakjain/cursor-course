@@ -10,7 +10,7 @@ export type GithubSummarizerQuotaClaim =
 
 const DEFAULT_LIMIT = 1000;
 
-/** Max summarizer invocations per OAuth user (or per key if the key has no user_id). Override with `GITHUB_SUMMARIZER_USAGE_LIMIT`. */
+/** Per-key summarizer quota allocated on key creation (`api_keys.usage_count`). Override with `GITHUB_SUMMARIZER_USAGE_LIMIT`. */
 export function readGithubSummarizerUsageLimit(): number {
   const raw = process.env.GITHUB_SUMMARIZER_USAGE_LIMIT;
   if (raw === undefined || raw.trim() === "") return DEFAULT_LIMIT;

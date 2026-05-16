@@ -5,7 +5,10 @@ export type ApiKeyRecord = {
   name: string;
   secret: string;
   createdAt: string;
+  /** Summarizer invocations consumed (`api_keys.github_summarizer_hits`). */
   usage: number;
+  /** Per-key summarizer quota (`api_keys.usage_count`). */
+  usageLimit: number;
 };
 
 export type ApiKeyPublic = {
@@ -13,7 +16,10 @@ export type ApiKeyPublic = {
   name: string;
   maskedSecret: string;
   createdAt: string;
+  /** Summarizer invocations consumed (`api_keys.github_summarizer_hits`). */
   usage: number;
+  /** Per-key summarizer quota (`api_keys.usage_count`). */
+  usageLimit: number;
 };
 
 export function maskSecret(secret: string): string {

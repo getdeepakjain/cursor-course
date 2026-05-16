@@ -13,10 +13,8 @@ import {
   CogIcon,
   ExternalLinkIcon,
   FileLinesIcon,
-  FolderIcon,
   HouseIcon,
   InvoiceIcon,
-  SparklesIcon,
 } from "./sidebar-icons";
 
 type Props = {
@@ -79,14 +77,6 @@ export function DashboardSidebar({ sidebarOpen, onCollapse, layout }: Props) {
             <HouseIcon />
             Overview
           </Link>
-          <span className={navDisabled} title="Coming soon">
-            <SparklesIcon />
-            Research Assistant
-          </span>
-          <span className={navDisabled} title="Coming soon">
-            <FolderIcon />
-            Research Reports
-          </span>
           <Link href="/playground" className={playgroundActive ? navActive : navInactive}>
             <CodeBracketsIcon />
             API Playground

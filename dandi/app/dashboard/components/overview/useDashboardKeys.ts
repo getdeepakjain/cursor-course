@@ -2,10 +2,34 @@
 
 import { getSession, useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import type { CreateResponse, KeyRow, ToastVariant } from "./types";
+import type { CreateResponse, KeyRow, KeysDashboardPayload, ToastVariant } from "./types";
 
 const TOAST_MS = 4500;
-const PLAN_LIMIT = 1000;
+
+const DEFAULT_DASHBOARD: KeysDashboardPayload = {
+  planName: "Free",
+  githubSummarizerUsage: 0,
+  githubSummarizerLimit: 1000,
+};
+
+function parseDashboard(raw: unknown): KeysDashboardPayload {
+  if (typeof raw !== "object" || raw === null) return { ...DEFAULT_DASHBOARD };
+  const o = raw as Record<string, unknown>;
+  const planRaw = o.planName;
+  const planName =
+    typeof planRaw === "string" && planRaw.trim() ? planRaw.trim() : DEFAULT_DASHBOARD.planName;
+  const usageRaw = o.githubSummarizerUsage;
+  const githubSummarizerUsage =
+    typeof usageRaw === "number" && Number.isFinite(usageRaw)
+      ? Math.max(0, usageRaw)
+      : DEFAULT_DASHBOARD.githubSummarizerUsage;
+  const limitRaw = o.githubSummarizerLimit;
+  const githubSummarizerLimit =
+    typeof limitRaw === "number" && Number.isFinite(limitRaw)
+      ? Math.max(0, Math.floor(limitRaw))
+      : DEFAULT_DASHBOARD.githubSummarizerLimit;
+  return { planName, githubSummarizerUsage, githubSummarizerLimit };
+}
 
 function readCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -63,6 +87,7 @@ export function useDashboardKeys() {
   const [toast, setToast] = useState<{ message: string; variant: ToastVariant } | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [dashboard, setDashboard] = useState<KeysDashboardPayload>(DEFAULT_DASHBOARD);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
 
@@ -97,6 +122,7 @@ export function useDashboardKeys() {
       const session = await getSession();
       if (!session?.user) {
         setKeys([]);
+        setDashboard({ ...DEFAULT_DASHBOARD });
         throw new Error("Sign in to manage API keys.");
       }
       const res = await fetch("/api/keys", await keysRequestInit());
@@ -112,9 +138,10 @@ export function useDashboardKeys() {
             : `Request failed (${res.status})`;
         throw new Error(msg);
       }
-      const data = payload as { keys?: unknown };
+      const data = payload as { keys?: unknown; dashboard?: unknown };
       if (!Array.isArray(data.keys)) throw new Error("Invalid response from server.");
       setKeys(data.keys as KeyRow[]);
+      setDashboard(parseDashboard(data.dashboard));
     } catch (e) {
       let msg = e instanceof Error ? e.message : "Could not load API keys.";
       const low = msg.toLowerCase();
@@ -138,6 +165,7 @@ export function useDashboardKeys() {
     if (status === "unauthenticated") {
       setLoading(false);
       setKeys([]);
+      setDashboard({ ...DEFAULT_DASHBOARD });
       setError("Sign in to manage API keys.");
       return;
     }
@@ -147,9 +175,9 @@ export function useDashboardKeys() {
     });
   }, [loadKeys, status]);
 
-  const totalUsage = keys.reduce((acc, k) => acc + k.usage, 0);
-  const usageDisplay = Math.min(totalUsage, PLAN_LIMIT);
-  const usagePct = PLAN_LIMIT ? Math.min(100, (usageDisplay / PLAN_LIMIT) * 100) : 0;
+  const planLimit = dashboard.githubSummarizerLimit;
+  const usageDisplay = dashboard.githubSummarizerUsage;
+  const usagePct = planLimit > 0 ? Math.min(100, (usageDisplay / planLimit) * 100) : 0;
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
@@ -291,7 +319,8 @@ export function useDashboardKeys() {
     copyKey,
     openRename,
     showToast,
-    planLimit: PLAN_LIMIT,
+    planName: dashboard.planName,
+    planLimit,
     usageDisplay,
     usagePct,
   };

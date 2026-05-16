@@ -36,3 +36,9 @@ export async function secretExists(secret: string) {
   if (isDirectPostgresConfigured()) return pg.secretExists(secret);
   return http.secretExists(secret);
 }
+
+/** Whether the API key secret is registered to the given OAuth user. */
+export async function apiKeyOwnedByUser(userId: string, secret: string) {
+  if (isDirectPostgresConfigured()) return pg.apiKeyOwnedByUser(userId, secret);
+  return http.apiKeyOwnedByUser(userId, secret);
+}

@@ -36,7 +36,12 @@ export default function DashboardPage() {
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">Overview</h1>
       </div>
 
-      <PlanUsageBanner usageDisplay={d.usageDisplay} planLimit={d.planLimit} usagePct={d.usagePct} />
+      <PlanUsageBanner
+        planName={d.planName}
+        usageDisplay={d.usageDisplay}
+        planLimit={d.planLimit}
+        usagePct={d.usagePct}
+      />
 
       <ApiKeysTableCard
         keys={d.keys}

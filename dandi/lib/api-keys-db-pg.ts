@@ -2,12 +2,14 @@ import { randomBytes } from "crypto";
 import type { ApiKeyPublic, ApiKeyRecord } from "@/lib/api-keys-store";
 import { tableKeyMask } from "@/lib/api-keys-store";
 import { getDirectPgPool } from "@/lib/direct-pg-pool";
+import { readGithubSummarizerUsageLimit } from "@/lib/github-summarizer-quota";
 
 type ApiKeyRow = {
   id: string;
   name: string;
   secret: string;
   usage_count: number;
+  github_summarizer_hits: number;
   created_at: Date | string;
 };
 
@@ -22,7 +24,8 @@ function toRecord(row: ApiKeyRow): ApiKeyRecord {
     name: row.name,
     secret: row.secret,
     createdAt: asIso(row.created_at),
-    usage: Number(row.usage_count),
+    usage: Number(row.github_summarizer_hits),
+    usageLimit: Number(row.usage_count),
   };
 }
 
@@ -31,7 +34,8 @@ function toPublic(row: ApiKeyRow): ApiKeyPublic {
     id: row.id,
     name: row.name,
     createdAt: asIso(row.created_at),
-    usage: Number(row.usage_count),
+    usage: Number(row.github_summarizer_hits),
+    usageLimit: Number(row.usage_count),
     maskedSecret: tableKeyMask(row.secret),
   };
 }
@@ -51,7 +55,7 @@ function pgError(err: unknown): never {
 export async function listKeys(userId: string): Promise<ApiKeyPublic[]> {
   try {
     const r = await getDirectPgPool().query<ApiKeyRow>(
-      `select id, name, secret, usage_count, created_at
+      `select id, name, secret, usage_count, github_summarizer_hits, created_at
        from public.api_keys
        where user_id = $1::uuid
        order by created_at desc`,
@@ -66,7 +70,7 @@ export async function listKeys(userId: string): Promise<ApiKeyPublic[]> {
 export async function getKey(userId: string, id: string): Promise<ApiKeyRecord | null> {
   try {
     const r = await getDirectPgPool().query<ApiKeyRow>(
-      `select id, name, secret, usage_count, created_at
+      `select id, name, secret, usage_count, github_summarizer_hits, created_at
        from public.api_keys
        where id = $1::uuid and user_id = $2::uuid`,
       [id, userId],
@@ -81,12 +85,13 @@ export async function getKey(userId: string, id: string): Promise<ApiKeyRecord |
 export async function createKey(userId: string, name: string): Promise<ApiKeyRecord> {
   const trimmed = name.trim() || "Untitled";
   const secret = `dandi_${randomBytes(24).toString("base64url")}`;
+  const perKeyLimit = readGithubSummarizerUsageLimit();
   try {
     const r = await getDirectPgPool().query<ApiKeyRow>(
-      `insert into public.api_keys (user_id, name, secret, usage_count)
-       values ($1::uuid, $2, $3, 0)
-       returning id, name, secret, usage_count, created_at`,
-      [userId, trimmed, secret],
+      `insert into public.api_keys (user_id, name, secret, usage_count, github_summarizer_hits)
+       values ($1::uuid, $2, $3, $4, 0)
+       returning id, name, secret, usage_count, github_summarizer_hits, created_at`,
+      [userId, trimmed, secret, perKeyLimit],
     );
     return toRecord(r.rows[0]!);
   } catch (e) {
@@ -111,7 +116,7 @@ export async function updateKey(
       `update public.api_keys
        set name = $1
        where id = $2::uuid and user_id = $3::uuid
-       returning id, name, secret, usage_count, created_at`,
+       returning id, name, secret, usage_count, github_summarizer_hits, created_at`,
       [nextName, id, userId],
     );
     return toRecord(r.rows[0]!);
@@ -127,6 +132,21 @@ export async function deleteKey(userId: string, id: string): Promise<boolean> {
       [id, userId],
     );
     return (r.rowCount ?? 0) > 0;
+  } catch (e) {
+    pgError(e);
+  }
+}
+
+/** True if the secret belongs to the given OAuth user (`api_keys.user_id`). */
+export async function apiKeyOwnedByUser(userId: string, secret: string): Promise<boolean> {
+  const trimmed = secret.trim();
+  if (!trimmed) return false;
+  try {
+    const r = await getDirectPgPool().query<{ one: number }>(
+      `select 1 as one from public.api_keys where secret = $1 and user_id = $2::uuid limit 1`,
+      [trimmed, userId],
+    );
+    return r.rows.length > 0;
   } catch (e) {
     pgError(e);
   }

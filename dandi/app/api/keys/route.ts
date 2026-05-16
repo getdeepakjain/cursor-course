@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { jsonDbError } from "@/lib/api-db-error";
 import { createKey, listKeys } from "@/lib/api-keys-db";
+import { getAppUserDashboardProfile } from "@/lib/app-users-db";
 import { requireKeysApiUser } from "@/lib/auth-keys-api";
+import { aggregateSummarizerUsageFromKeys } from "@/lib/summarizer-usage-aggregate";
 
 export async function GET(request: Request) {
   const auth = await requireKeysApiUser(request);
@@ -9,8 +11,20 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
   try {
-    const keys = await listKeys(auth.userUuid);
-    return NextResponse.json({ keys });
+    const [keys, profile] = await Promise.all([
+      listKeys(auth.userUuid),
+      getAppUserDashboardProfile(auth.userUuid),
+    ]);
+    const { consumed, allowed } = aggregateSummarizerUsageFromKeys(keys);
+    const planName = (profile?.planName ?? "Free").trim() || "Free";
+    return NextResponse.json({
+      keys,
+      dashboard: {
+        planName,
+        githubSummarizerUsage: consumed,
+        githubSummarizerLimit: allowed,
+      },
+    });
   } catch (err) {
     return jsonDbError(err);
   }

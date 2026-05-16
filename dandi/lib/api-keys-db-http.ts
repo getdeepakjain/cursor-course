@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import type { ApiKeyPublic, ApiKeyRecord } from "@/lib/api-keys-store";
 import { tableKeyMask } from "@/lib/api-keys-store";
+import { readGithubSummarizerUsageLimit } from "@/lib/github-summarizer-quota";
 import { throwFromPostgrestError } from "@/lib/supabase-postgrest-error";
 import { getServiceSupabase } from "@/lib/supabase/service";
 
@@ -9,6 +10,7 @@ type ApiKeyRow = {
   name: string;
   secret: string;
   usage_count: number;
+  github_summarizer_hits: number;
   created_at: string;
 };
 
@@ -18,7 +20,8 @@ function toRecord(row: ApiKeyRow): ApiKeyRecord {
     name: row.name,
     secret: row.secret,
     createdAt: row.created_at,
-    usage: row.usage_count,
+    usage: row.github_summarizer_hits,
+    usageLimit: row.usage_count,
   };
 }
 
@@ -27,7 +30,8 @@ function toPublic(row: ApiKeyRow): ApiKeyPublic {
     id: row.id,
     name: row.name,
     createdAt: row.created_at,
-    usage: row.usage_count,
+    usage: row.github_summarizer_hits,
+    usageLimit: row.usage_count,
     maskedSecret: tableKeyMask(row.secret),
   };
 }
@@ -36,7 +40,7 @@ export async function listKeys(userId: string): Promise<ApiKeyPublic[]> {
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("api_keys")
-    .select("id, name, secret, usage_count, created_at")
+    .select("id, name, secret, usage_count, github_summarizer_hits, created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -48,7 +52,7 @@ export async function getKey(userId: string, id: string): Promise<ApiKeyRecord |
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("api_keys")
-    .select("id, name, secret, usage_count, created_at")
+    .select("id, name, secret, usage_count, github_summarizer_hits, created_at")
     .eq("id", id)
     .eq("user_id", userId)
     .maybeSingle();
@@ -61,6 +65,7 @@ export async function getKey(userId: string, id: string): Promise<ApiKeyRecord |
 export async function createKey(userId: string, name: string): Promise<ApiKeyRecord> {
   const trimmed = name.trim() || "Untitled";
   const secret = `dandi_${randomBytes(24).toString("base64url")}`;
+  const perKeyLimit = readGithubSummarizerUsageLimit();
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("api_keys")
@@ -68,9 +73,10 @@ export async function createKey(userId: string, name: string): Promise<ApiKeyRec
       user_id: userId,
       name: trimmed,
       secret,
-      usage_count: 0,
+      usage_count: perKeyLimit,
+      github_summarizer_hits: 0,
     })
-    .select("id, name, secret, usage_count, created_at")
+    .select("id, name, secret, usage_count, github_summarizer_hits, created_at")
     .single();
 
   if (error) throwFromPostgrestError(error);
@@ -86,7 +92,7 @@ export async function updateKey(
   const supabase = getServiceSupabase();
   const { data: existing, error: fetchErr } = await supabase
     .from("api_keys")
-    .select("id, name, secret, usage_count, created_at")
+    .select("id, name, secret, usage_count, github_summarizer_hits, created_at")
     .eq("id", id)
     .eq("user_id", userId)
     .maybeSingle();
@@ -100,7 +106,7 @@ export async function updateKey(
     .update({ name: nextName })
     .eq("id", id)
     .eq("user_id", userId)
-    .select("id, name, secret, usage_count, created_at")
+    .select("id, name, secret, usage_count, github_summarizer_hits, created_at")
     .single();
 
   if (error) throwFromPostgrestError(error);
@@ -115,6 +121,22 @@ export async function deleteKey(userId: string, id: string): Promise<boolean> {
     .eq("id", id)
     .eq("user_id", userId)
     .select("id");
+
+  if (error) throwFromPostgrestError(error);
+  return Array.isArray(data) && data.length > 0;
+}
+
+/** True if the secret belongs to the given OAuth user (`api_keys.user_id`). */
+export async function apiKeyOwnedByUser(userId: string, secret: string): Promise<boolean> {
+  const trimmed = secret.trim();
+  if (!trimmed) return false;
+  const supabase = getServiceSupabase();
+  const { data, error } = await supabase
+    .from("api_keys")
+    .select("id")
+    .eq("secret", trimmed)
+    .eq("user_id", userId)
+    .limit(1);
 
   if (error) throwFromPostgrestError(error);
   return Array.isArray(data) && data.length > 0;

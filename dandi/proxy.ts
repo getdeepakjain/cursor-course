@@ -14,6 +14,8 @@ export const config = {
     "/playground/:path*",
     "/api/keys",
     "/api/keys/:path*",
+    "/api/playground",
+    "/api/playground/:path*",
   ],
 };
 
