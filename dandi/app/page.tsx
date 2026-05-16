@@ -438,11 +438,6 @@ export default function Home() {
                       : "border-zinc-200/90 bg-white/80 shadow-md dark:border-white/10 dark:bg-zinc-900/50",
                   )}
                 >
-                  {plan.featured ? (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
-                      Popular
-                    </div>
-                  ) : null}
                   {plan.comingSoon ? (
                     <div className="absolute right-4 top-4 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-400">
                       Coming soon

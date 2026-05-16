@@ -15,6 +15,45 @@ type Props = {
   onRequestDelete: (id: string) => void;
 };
 
+function KeyRowActions({
+  row,
+  revealed,
+  revealLoading,
+  onToggleReveal,
+  onCopy,
+  onRename,
+  onRequestDelete,
+}: {
+  row: KeyRow;
+  revealed: Record<string, string>;
+  revealLoading: string | null;
+  onToggleReveal: (id: string) => void;
+  onCopy: (row: KeyRow) => void;
+  onRename: (row: KeyRow) => void;
+  onRequestDelete: (id: string) => void;
+}) {
+  return (
+    <>
+      <IconButton
+        label={revealed[row.id] ? "Hide key" : "Reveal key"}
+        onClick={() => void onToggleReveal(row.id)}
+        disabled={revealLoading === row.id}
+      >
+        {revealed[row.id] ? <EyeSlashIcon /> : <EyeIcon />}
+      </IconButton>
+      <IconButton label="Copy key" onClick={() => void onCopy(row)}>
+        <CopyIcon />
+      </IconButton>
+      <IconButton label="Rename" onClick={() => onRename(row)}>
+        <PencilIcon />
+      </IconButton>
+      <IconButton label="Delete" onClick={() => onRequestDelete(row.id)}>
+        <TrashIcon />
+      </IconButton>
+    </>
+  );
+}
+
 /** API keys table, inline errors, and FAB to open the create modal. */
 export function ApiKeysTableCard({
   keys,
@@ -28,6 +67,15 @@ export function ApiKeysTableCard({
   onRename,
   onRequestDelete,
 }: Props) {
+  const actionProps = {
+    revealed,
+    revealLoading,
+    onToggleReveal,
+    onCopy,
+    onRename,
+    onRequestDelete,
+  };
+
   return (
     <div className="mt-6 px-4 sm:mt-8 sm:px-6 md:px-8">
       <div className="rounded-xl border border-neutral-200/80 bg-white shadow-sm">
@@ -77,26 +125,63 @@ export function ApiKeysTableCard({
           </p>
         ) : null}
 
-        <div className="-mx-0 overflow-x-auto px-1 pb-2 sm:px-2">
-          <table className="min-w-[36rem] text-left text-sm sm:min-w-full">
+        {/* Mobile: stacked cards */}
+        <div className="divide-y divide-neutral-100 sm:hidden">
+          {loading ? (
+            <p className="px-4 py-10 text-center text-neutral-500">Loading…</p>
+          ) : keys.length === 0 ? (
+            <p className="px-4 py-10 text-center text-neutral-500">No API keys yet. Use the + button to create one.</p>
+          ) : (
+            keys.map((row) => (
+              <div key={row.id} className="space-y-3 px-4 py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Name</p>
+                    <p className="mt-0.5 break-words font-medium text-neutral-900">{row.name}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Usage</p>
+                    <p className="mt-0.5 tabular-nums text-neutral-600">{row.usage.toLocaleString()}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Key</p>
+                  <span className="mt-1 block w-full truncate rounded-full bg-neutral-100 px-2.5 py-1.5 font-mono text-[11px] text-neutral-800">
+                    {revealed[row.id] ?? row.maskedSecret}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Options</p>
+                  <div className="flex shrink-0 flex-nowrap gap-0.5">
+                    <KeyRowActions row={row} {...actionProps} />
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop: table */}
+        <div className="hidden overflow-x-auto px-2 pb-2 sm:block">
+          <table className="w-full text-left text-sm">
             <thead>
               <tr className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                <th className="whitespace-nowrap px-3 py-3 sm:px-4">Name</th>
-                <th className="whitespace-nowrap px-3 py-3 sm:px-4">Summarizer usage</th>
-                <th className="min-w-[8rem] px-3 py-3 sm:min-w-0 sm:px-4">Key</th>
-                <th className="whitespace-nowrap px-3 py-3 text-right sm:px-4">Options</th>
+                <th className="whitespace-nowrap px-4 py-3">Name</th>
+                <th className="whitespace-nowrap px-4 py-3">Summarizer usage</th>
+                <th className="px-4 py-3">Key</th>
+                <th className="whitespace-nowrap px-4 py-3 text-right">Options</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-10 text-center text-neutral-500 sm:py-12">
+                  <td colSpan={4} className="px-4 py-12 text-center text-neutral-500">
                     Loading…
                   </td>
                 </tr>
               ) : keys.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-10 text-center text-neutral-500 sm:py-12">
+                  <td colSpan={4} className="px-4 py-12 text-center text-neutral-500">
                     No API keys yet. Use the + button to create one.
                   </td>
                 </tr>
@@ -106,35 +191,18 @@ export function ApiKeysTableCard({
                     key={row.id}
                     className="border-t border-neutral-100 transition-colors hover:bg-neutral-50/80"
                   >
-                    <td className="max-w-[10rem] truncate px-3 py-3 font-medium text-neutral-900 sm:max-w-none sm:px-4 sm:py-4">
-                      {row.name}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-3 tabular-nums text-neutral-600 sm:px-4 sm:py-4">
+                    <td className="px-4 py-4 font-medium text-neutral-900">{row.name}</td>
+                    <td className="whitespace-nowrap px-4 py-4 tabular-nums text-neutral-600">
                       {row.usage.toLocaleString()}
                     </td>
-                    <td className="max-w-0 px-3 py-3 sm:max-w-none sm:px-4 sm:py-4">
-                      <span className="inline-block max-w-[min(240px,55vw)] truncate rounded-full bg-neutral-100 px-2.5 py-1.5 font-mono text-[11px] text-neutral-800 sm:max-w-[min(420px,50vw)] sm:px-3 sm:text-xs">
+                    <td className="px-4 py-4">
+                      <span className="inline-block max-w-[min(420px,50vw)] truncate rounded-full bg-neutral-100 px-3 py-1.5 font-mono text-xs text-neutral-800">
                         {revealed[row.id] ?? row.maskedSecret}
                       </span>
                     </td>
-                    <td className="px-2 py-3 sm:px-4 sm:py-4">
-                      <div className="flex flex-wrap justify-end gap-0.5 sm:flex-nowrap">
-                        <IconButton
-                          label={revealed[row.id] ? "Hide key" : "Reveal key"}
-                          onClick={() => void onToggleReveal(row.id)}
-                          disabled={revealLoading === row.id}
-                        >
-                          {revealed[row.id] ? <EyeSlashIcon /> : <EyeIcon />}
-                        </IconButton>
-                        <IconButton label="Copy key" onClick={() => void onCopy(row)}>
-                          <CopyIcon />
-                        </IconButton>
-                        <IconButton label="Rename" onClick={() => onRename(row)}>
-                          <PencilIcon />
-                        </IconButton>
-                        <IconButton label="Delete" onClick={() => onRequestDelete(row.id)}>
-                          <TrashIcon />
-                        </IconButton>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-nowrap justify-end gap-0.5">
+                        <KeyRowActions row={row} {...actionProps} />
                       </div>
                     </td>
                   </tr>
