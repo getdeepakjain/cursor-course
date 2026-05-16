@@ -43,6 +43,23 @@ If the summarizer returns **503** and logs or the JSON **`detail`** (in developm
 
 2. **Use local Ollama** — set **`OLLAMA_BASE_URL=http://127.0.0.1:11434`**, remove **`OLLAMA_API_KEY`**, run **`ollama serve`**, and use a locally pulled **`OLLAMA_MODEL`** so traffic stays on localhost and avoids that TLS path to the public internet.
 
+### `yarn audit` / `yarn install` — self-signed certificate in certificate chain
+
+On corporate networks or with HTTPS-scanning antivirus, Yarn may fail with **`self-signed certificate in certificate chain`** when talking to the npm registry.
+
+This repo’s **`.yarnrc`** sets **`strict-ssl false`** so Yarn trusts the registry through your network’s TLS inspection (dev convenience).
+
+**Stricter option (recommended for long-term):** export your organization’s root CA, then point Node at it:
+
+```powershell
+# From dandi/
+.\scripts\export-windows-ca-bundle.ps1
+$env:NODE_EXTRA_CA_CERTS = (Resolve-Path .\certs\windows-root-bundle.pem).Path
+yarn audit
+```
+
+You can set **`NODE_EXTRA_CA_CERTS`** in your user environment variables so every terminal session picks it up. If you use a single PEM from IT instead of the script, set that path directly.
+
 ### `EACCES: permission denied …` on a port (Windows)
 
 Hyper-V, WSL, or Docker can **reserve TCP ranges** so binding to `127.0.0.1` fails with **EACCES**. List reserved ports (**PowerShell as Administrator**):
